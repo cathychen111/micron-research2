@@ -1,0 +1,182 @@
+<h2 class="sr-only">美光股价 vs 云厂商积压订单：从预期到合同驱动的演变</h2>
+
+<div style="padding:1rem 0 0.5rem;">
+
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:12px;color:var(--color-text-secondary);align-items:center;">
+  <span style="display:flex;align-items:center;gap:5px;"><span style="width:28px;height:3px;background:#7F77DD;border-radius:2px;display:inline-block;"></span>美光股价（左轴）</span>
+  <span style="display:flex;align-items:center;gap:5px;"><span style="width:28px;height:3px;background:#1D9E75;border-radius:2px;border-top:2px dashed #1D9E75;display:inline-block;"></span>谷歌Cloud积压（右轴）</span>
+  <span style="display:flex;align-items:center;gap:5px;"><span style="width:28px;height:3px;background:#EF9F27;border-radius:2px;border-top:2px dashed #EF9F27;display:inline-block;"></span>微软Azure积压（右轴）</span>
+  <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#E24B4A;display:inline-block;"></span>关键事件</span>
+</div>
+
+<div style="position:relative;width:100%;height:340px;">
+  <canvas id="dualChart" role="img" aria-label="美光股价与谷歌、微软积压订单双轴对比图，2023Q1到2026Q1，展示积压订单从百亿级增长到数千亿级，股价同步从90美元涨至751美元">美光股价从$90涨至$751；谷歌Cloud积压从$40B涨至$462B；微软Azure积压从$100B涨至$625B</canvas>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px;">
+  <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px;border-top:3px solid #AFA9EC;">
+    <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:3px;">阶段一 2023Q1–2024Q2</div>
+    <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;">预期驱动</div>
+    <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.5;">积压订单仅$40–85B<br>股价靠叙事上涨<br>没有合同锁定</div>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px;border-top:3px solid #5DCAA5;">
+    <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:3px;">阶段二 2024Q3–2025Q2</div>
+    <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;">基本面确认</div>
+    <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.5;">积压$85–106B<br>财报开始验证逻辑<br>数据中心>50%收入</div>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px;border-top:3px solid #EF9F27;">
+    <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:3px;">阶段三 2025Q3–今</div>
+    <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;">合同锁定</div>
+    <div style="font-size:11px;color:var(--color-text-secondary);line-height:1.5;">积压$155B→$462B<br>翻倍式增长<br>合同驱动，不是预期</div>
+  </div>
+</div>
+
+<div style="margin-top:10px;padding:10px 14px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);">
+  <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;">
+    <span style="color:#E24B4A;font-weight:500;">关键观察：</span>谷歌积压订单在2026Q1单季跳升$220B（$240B→$462B），是迄今为止单季最大企业AI承诺。
+    <span style="color:#085041;font-weight:500;">CEO明确说</span>："云收入本可以更高，约束是供给不是需求"——内存供给不足正在限制云厂商的收入增长。
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const labels = ['23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1'];
+
+const muPrice = [62, 68, 72, 90, 110, 140, 155, 175, 220, 280, 310, 490, 751];
+
+const googleBacklog = [null, null, null, 40, null, 60, 85, null, null, 106, 155, 240, 462];
+
+const msftBacklog = [null, null, null, null, 100, null, null, 133, null, null, 259, 392, 625];
+
+const eventPoints = {
+  3: 'ChatGPT爆发\n市场开始押注AI',
+  6: '谷歌积压$85B\n首次引发关注',
+  9: '谷歌积压$106B\n突破百亿里程碑',
+  10: '谷歌积压$155B\n季比季+46%',
+  11: 'FY25 Q4毛利率59%\n质变节点',
+  12: '谷歌积压$462B\n单季翻倍\n合同锁定时代'
+};
+
+const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+const textCol = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
+const gridCol = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+
+const muColors = muPrice.map((_,i) => eventPoints[i] ? '#E24B4A' : '#7F77DD');
+const muRadii = muPrice.map((_,i) => eventPoints[i] ? 6 : 3);
+
+new Chart(document.getElementById('dualChart'), {
+  data: {
+    labels,
+    datasets: [
+      {
+        type: 'line',
+        label: '美光股价',
+        data: muPrice,
+        yAxisID: 'yPrice',
+        borderColor: '#7F77DD',
+        borderWidth: 2.5,
+        pointBackgroundColor: muColors,
+        pointBorderColor: muColors,
+        pointRadius: muRadii,
+        pointHoverRadius: muRadii.map(r => r + 2),
+        tension: 0.35,
+        fill: false,
+        order: 1
+      },
+      {
+        type: 'bar',
+        label: '谷歌Cloud积压($B)',
+        data: googleBacklog,
+        yAxisID: 'yBacklog',
+        backgroundColor: 'rgba(29,158,117,0.25)',
+        borderColor: '#1D9E75',
+        borderWidth: 1.5,
+        borderRadius: 4,
+        order: 3
+      },
+      {
+        type: 'bar',
+        label: '微软Azure积压($B)',
+        data: msftBacklog,
+        yAxisID: 'yBacklog',
+        backgroundColor: 'rgba(239,159,39,0.2)',
+        borderColor: '#EF9F27',
+        borderWidth: 1.5,
+        borderRadius: 4,
+        order: 2
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: isDark ? '#2C2C2A' : '#fff',
+        titleColor: isDark ? '#fff' : '#1a1a1a',
+        bodyColor: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.55)',
+        borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          label: ctx => {
+            if (ctx.dataset.label === '美光股价') return '美光股价：$' + ctx.parsed.y;
+            if (ctx.parsed.y === null) return null;
+            return ctx.dataset.label + '：$' + ctx.parsed.y + 'B';
+          },
+          afterBody: ctx => {
+            const i = ctx[0]?.dataIndex;
+            return eventPoints[i] ? ['\n' + eventPoints[i]] : [];
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: textCol, font: { size: 11 }, autoSkip: false, maxRotation: 45 },
+        grid: { color: gridCol }
+      },
+      yPrice: {
+        type: 'linear',
+        position: 'left',
+        min: 0,
+        max: 900,
+        ticks: {
+          color: '#7F77DD',
+          font: { size: 11 },
+          callback: v => '$' + v
+        },
+        grid: { color: gridCol },
+        title: {
+          display: true,
+          text: '股价（$）',
+          color: '#7F77DD',
+          font: { size: 11 }
+        }
+      },
+      yBacklog: {
+        type: 'linear',
+        position: 'right',
+        min: 0,
+        max: 700,
+        ticks: {
+          color: textCol,
+          font: { size: 11 },
+          callback: v => '$' + v + 'B'
+        },
+        grid: { display: false },
+        title: {
+          display: true,
+          text: '积压订单（$B）',
+          color: textCol,
+          font: { size: 11 }
+        }
+      }
+    }
+  }
+});
+</script>
