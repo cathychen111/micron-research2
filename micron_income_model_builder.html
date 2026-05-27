@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { font-family: -apple-system, sans-serif; padding: 16px; background: transparent; color: var(--text-primary, #1a1a1a); font-size: 13px; }
+  h2 { font-size: 15px; margin: 0 0 4px; }
+  .subtitle { color: #888; font-size: 12px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f5f5f5; padding: 8px 10px; text-align: center; font-size: 12px; color: #555; border: 1px solid #e0e0e0; }
+  td { padding: 7px 10px; border: 1px solid #e0e0e0; vertical-align: middle; }
+  td:first-child { font-weight: 500; width: 160px; }
+  .actual { text-align: right; color: #1a1a1a; background: #fafafa; }
+  .input-cell { background: #fffbe6; text-align: center; }
+  .derived { text-align: right; background: #f0f9f5; color: #085041; font-weight: 600; }
+  .section-header { background: #eef2ff; font-weight: 700; font-size: 12px; color: #3C3489; }
+  input[type=number] { width: 70px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 13px; }
+  input:focus { outline: none; border-color: #534AB7; }
+  .eps-row td { font-size: 15px; font-weight: 700; }
+  .eps-bull { color: #085041; }
+  .eps-base { color: #854F0B; }
+  .eps-bear { color: #A32D2D; }
+  .hint { font-size: 11px; color: #aaa; margin-top: 4px; }
+  .note { background: #fff8e1; border-left: 3px solid #EF9F27; padding: 8px 12px; margin-bottom: 14px; border-radius: 4px; font-size: 12px; }
+  .sensitivity { margin-top: 20px; padding: 12px; background: #f8f8f8; border-radius: 8px; }
+  .sensitivity h3 { font-size: 13px; margin: 0 0 8px; }
+  .sens-row { display: flex; justify-content: space-between; margin: 4px 0; font-size: 12px; }
+  .recalc-btn { margin-top: 12px; background: #534AB7; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; width: 100%; }
+  .recalc-btn:hover { background: #3C3489; }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
+  .tag-actual { background: #e8e8e8; color: #555; }
+  .tag-input { background: #fff3cd; color: #854F0B; }
+  .tag-calc { background: #d4edda; color: #085041; }
+</style>
+</head>
+<body>
+
+<h2>美光（MU）利润表模型</h2>
+<p class="subtitle">FY26 全年（4个季度：Q1实际 + Q2实际 + Q3指引 + Q4你来假设）</p>
+
+<div class="note">
+  黄色格子 = 你的假设 <span class="tag tag-input">输入</span>　
+  绿色格子 = 自动计算 <span class="tag tag-calc">推导</span>　
+  灰色格子 = 真实数据 <span class="tag tag-actual">实际</span>
+</div>
+
+<table id="model">
+  <thead>
+    <tr>
+      <th>项目</th>
+      <th>FQ1实际<br><span style="font-weight:400;color:#999">2025.12</span></th>
+      <th>FQ2实际<br><span style="font-weight:400;color:#999">2026.03</span></th>
+      <th>FQ3指引<br><span style="font-weight:400;color:#999">2026.06</span></th>
+      <th>FQ4你假设<br><span style="font-weight:400;color:#999">2026.09</span></th>
+      <th>FY26全年</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>收入（$B）</td>
+      <td class="actual">13.64</td>
+      <td class="actual">23.86</td>
+      <td class="actual">33.50</td>
+      <td class="input-cell"><input type="number" id="q4_rev" value="36" step="0.5" min="10" max="60" onchange="calc()"></td>
+      <td class="derived" id="fy_rev">—</td>
+    </tr>
+    <tr>
+      <td>毛利率（%）</td>
+      <td class="actual">56.0%</td>
+      <td class="actual">74.9%</td>
+      <td class="actual">~81.0%</td>
+      <td class="input-cell"><input type="number" id="q4_gm" value="82" step="0.5" min="20" max="90" onchange="calc()">%</td>
+      <td class="derived" id="fy_gm">—</td>
+    </tr>
+    <tr class="section-header">
+      <td colspan="6">↓ 以下均为推导（基于你的假设自动计算）</td>
+    </tr>
+    <tr>
+      <td>毛利润（$B）</td>
+      <td class="actual">7.64</td>
+      <td class="actual">17.86</td>
+      <td class="derived" id="q3_gp">—</td>
+      <td class="derived" id="q4_gp">—</td>
+      <td class="derived" id="fy_gp">—</td>
+    </tr>
+    <tr>
+      <td>运营费用（$B）<br><span class="hint">研发+销售管理</span></td>
+      <td class="actual">1.57</td>
+      <td class="actual">1.59</td>
+      <td class="input-cell"><input type="number" id="q3_opex" value="1.7" step="0.05" min="1" max="4" onchange="calc()"></td>
+      <td class="input-cell"><input type="number" id="q4_opex" value="1.8" step="0.05" min="1" max="4" onchange="calc()"></td>
+      <td class="derived" id="fy_opex">—</td>
+    </tr>
+    <tr>
+      <td>营业利润（$B）</td>
+      <td class="actual">6.07</td>
+      <td class="actual">16.27</td>
+      <td class="derived" id="q3_ebit">—</td>
+      <td class="derived" id="q4_ebit">—</td>
+      <td class="derived" id="fy_ebit">—</td>
+    </tr>
+    <tr>
+      <td>税率（%）</td>
+      <td class="actual">12%</td>
+      <td class="actual">15%</td>
+      <td class="input-cell"><input type="number" id="q3_tax" value="15" step="1" min="0" max="30" onchange="calc()">%</td>
+      <td class="input-cell"><input type="number" id="q4_tax" value="15" step="1" min="0" max="30" onchange="calc()">%</td>
+      <td class="derived" id="fy_tax">—</td>
+    </tr>
+    <tr>
+      <td>净利润（$B）</td>
+      <td class="actual">5.24</td>
+      <td class="actual">13.84</td>
+      <td class="derived" id="q3_ni">—</td>
+      <td class="derived" id="q4_ni">—</td>
+      <td class="derived" id="fy_ni">—</td>
+    </tr>
+    <tr>
+      <td>稀释股数（B股）</td>
+      <td class="actual">1.13</td>
+      <td class="actual">1.14</td>
+      <td class="actual">1.14</td>
+      <td class="actual">1.14</td>
+      <td class="actual">1.14</td>
+    </tr>
+    <tr class="eps-row">
+      <td>EPS（$）</td>
+      <td class="actual">4.60</td>
+      <td class="actual">12.07</td>
+      <td class="derived eps-bull" id="q3_eps">—</td>
+      <td class="derived eps-bull" id="q4_eps">—</td>
+      <td class="derived eps-bull" id="fy_eps">—</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="sensitivity" id="sens_box" style="display:none">
+  <h3>敏感性分析：改变一个假设，EPS变多少？</h3>
+  <div class="sens-row"><span>Q4毛利率 +1%</span><span id="s1">—</span></div>
+  <div class="sens-row"><span>Q4毛利率 -5%（三星竞争）</span><span id="s2">—</span></div>
+  <div class="sens-row"><span>Q4收入 -$5B（需求放缓）</span><span id="s3">—</span></div>
+  <div class="sens-row"><span>Q4收入 +$5B（超预期）</span><span id="s4">—</span></div>
+  <div class="hint" style="margin-top:6px">这就是为什么毛利率假设比收入假设更重要——看哪个数字对EPS更敏感</div>
+</div>
+
+<button class="recalc-btn" onclick="calc()">重新计算</button>
+
+<script>
+const SHARES = 1.14;
+
+// Fixed actuals
+const q1 = { rev: 13.64, gm: 0.56, gp: 7.64, opex: 1.57, ebit: 6.07, tax: 0.12, ni: 5.24, eps: 4.60 };
+const q2 = { rev: 23.86, gm: 0.749, gp: 17.86, opex: 1.59, ebit: 16.27, tax: 0.15, ni: 13.84, eps: 12.07 };
+const q3_rev = 33.50;
+
+function calc() {
+  const q3_gm = 0.81;
+  const q3_opex = parseFloat(document.getElementById('q3_opex').value) || 1.7;
+  const q3_tax = (parseFloat(document.getElementById('q3_tax').value) || 15) / 100;
+
+  const q4_rev = parseFloat(document.getElementById('q4_rev').value) || 36;
+  const q4_gm = (parseFloat(document.getElementById('q4_gm').value) || 82) / 100;
+  const q4_opex = parseFloat(document.getElementById('q4_opex').value) || 1.8;
+  const q4_tax = (parseFloat(document.getElementById('q4_tax').value) || 15) / 100;
+
+  // Q3
+  const q3_gp = q3_rev * q3_gm;
+  const q3_ebit = q3_gp - q3_opex;
+  const q3_ni = q3_ebit * (1 - q3_tax);
+  const q3_eps = q3_ni / SHARES;
+
+  // Q4
+  const q4_gp = q4_rev * q4_gm;
+  const q4_ebit = q4_gp - q4_opex;
+  const q4_ni = q4_ebit * (1 - q4_tax);
+  const q4_eps = q4_ni / SHARES;
+
+  // Full year
+  const fy_rev = q1.rev + q2.rev + q3_rev + q4_rev;
+  const fy_gp = q1.gp + q2.gp + q3_gp + q4_gp;
+  const fy_gm = fy_gp / fy_rev;
+  const fy_opex = q1.opex + q2.opex + q3_opex + q4_opex;
+  const fy_ni = q1.ni + q2.ni + q3_ni + q4_ni;
+  const fy_eps = fy_ni / SHARES;
+
+  const fmt = (n, d=2) => n.toFixed(d);
+
+  document.getElementById('q3_gp').textContent = fmt(q3_gp);
+  document.getElementById('q3_ebit').textContent = fmt(q3_ebit);
+  document.getElementById('q3_ni').textContent = fmt(q3_ni);
+  document.getElementById('q3_eps').textContent = '$' + fmt(q3_eps);
+
+  document.getElementById('q4_gp').textContent = fmt(q4_gp);
+  document.getElementById('q4_ebit').textContent = fmt(q4_ebit);
+  document.getElementById('q4_ni').textContent = fmt(q4_ni);
+  document.getElementById('q4_eps').textContent = '$' + fmt(q4_eps);
+
+  document.getElementById('fy_rev').textContent = fmt(fy_rev) + 'B';
+  document.getElementById('fy_gm').textContent = fmt(fy_gm * 100, 1) + '%';
+  document.getElementById('fy_gp').textContent = fmt(fy_gp);
+  document.getElementById('fy_opex').textContent = fmt(fy_opex);
+  document.getElementById('fy_ni').textContent = fmt(fy_ni);
+  document.getElementById('fy_eps').textContent = '$' + fmt(fy_eps);
+
+  // Sensitivity
+  const s1_eps = ((q4_rev*(q4_gm+0.01) - q4_opex)*(1-q4_tax)) / SHARES;
+  const s2_eps = ((q4_rev*(q4_gm-0.05) - q4_opex)*(1-q4_tax)) / SHARES;
+  const s3_eps = (((q4_rev-5)*q4_gm - q4_opex)*(1-q4_tax)) / SHARES;
+  const s4_eps = (((q4_rev+5)*q4_gm - q4_opex)*(1-q4_tax)) / SHARES;
+
+  document.getElementById('s1').textContent = '+$' + fmt(s1_eps - q4_eps) + ' Q4 EPS';
+  document.getElementById('s2').textContent = '-$' + fmt(q4_eps - s2_eps) + ' Q4 EPS';
+  document.getElementById('s3').textContent = '-$' + fmt(q4_eps - s3_eps) + ' Q4 EPS';
+  document.getElementById('s4').textContent = '+$' + fmt(s4_eps - q4_eps) + ' Q4 EPS';
+
+  document.getElementById('sens_box').style.display = 'block';
+}
+
+calc();
+</script>
+</body>
+</html>

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Micron Investment Research — Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ink: #0a0a0f;
+    --paper: #f5f2eb;
+    --accent: #c84b31;
+    --gold: #d4a843;
+    --steel: #2a3545;
+    --muted: #8a8070;
+    --rule: rgba(10,10,15,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.6;
+  }
+
+  /* Header */
+  header {
+    padding: 60px 64px 48px;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header-rule {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 4px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--gold) 50%, var(--steel) 100%);
+  }
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .eyebrow::after {
+    content: '';
+    flex: 1;
+    max-width: 120px;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    max-width: 800px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .header-meta {
+    margin-top: 28px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 5px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    background: white;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .badge.live {
+    border-color: var(--accent);
+    color: var(--accent);
+    position: relative;
+  }
+
+  .badge.live::before {
+    content: '●';
+    margin-right: 6px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .ticker {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--steel);
+  }
+
+  /* Main layout */
+  main {
+    padding: 0 64px 80px;
+  }
+
+  /* Section headers */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 40px 0 20px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .section-label span {
+    font-size: 18px;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    letter-spacing: 0;
+    color: var(--ink);
+    font-weight: 400;
+  }
+
+  /* Card grid */
+  .grid {
+    display: grid;
+    gap: 0;
+    border-left: 1px solid var(--rule);
+  }
+
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    header, main { padding-left: 24px; padding-right: 24px; }
+  }
+
+  /* Card */
+  .card {
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 32px 36px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 0;
+    background: var(--accent);
+    transition: height 0.3s ease;
+  }
+
+  .card:hover {
+    background: white;
+  }
+
+  .card:hover::before {
+    height: 100%;
+  }
+
+  .card-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    letter-spacing: 0.1em;
+  }
+
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .card-tag {
+    position: absolute;
+    bottom: 20px; right: 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--rule);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: color 0.2s ease;
+  }
+
+  .card:hover .card-tag {
+    color: var(--accent);
+  }
+
+  /* Featured card (full width) */
+  .card.featured {
+    grid-column: 1 / -1;
+    padding: 48px 64px;
+    background: var(--steel);
+    color: var(--paper);
+    border-right: none;
+  }
+
+  .card.featured::before {
+    background: var(--gold);
+  }
+
+  .card.featured:hover {
+    background: #1e2a38;
+  }
+
+  .card.featured .card-num { color: rgba(245,242,235,0.4); }
+  .card.featured .card-title { font-size: 26px; }
+  .card.featured .card-desc { color: rgba(245,242,235,0.6); }
+  .card.featured .card-tag { color: rgba(245,242,235,0.2); }
+  .card.featured:hover .card-tag { color: var(--gold); }
+
+  /* Interactive card */
+  .card.interactive {
+    background: linear-gradient(135deg, #fff9f0 0%, #fff 100%);
+    border-top: 3px solid var(--gold);
+  }
+
+  .card.interactive::before { background: var(--gold); }
+  .card.interactive .card-title { color: #7a4a00; }
+
+  .card-arrow {
+    display: inline-block;
+    margin-top: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.25s ease;
+  }
+
+  .card:hover .card-arrow { opacity: 1; transform: translateX(0); }
+  .card.featured .card-arrow { color: var(--gold); }
+  .card.interactive .card-arrow { color: var(--gold); }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--rule);
+    padding: 32px 64px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: gap;
+  }
+
+  .footer-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,15,0.85);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--paper);
+    width: 100%;
+    max-width: 1100px;
+    height: 88vh;
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  }
+
+  .modal-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    flex-shrink: 0;
+  }
+
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .modal-close {
+    background: none;
+    border: 1px solid var(--rule);
+    width: 36px; height: 36px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    transition: all 0.15s ease;
+  }
+
+  .modal-close:hover {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .modal-body {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .modal-body iframe,
+  .modal-body object {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  /* Hover number animation */
+  .card-num-large {
+    position: absolute;
+    top: -10px; right: 20px;
+    font-family: 'Playfair Display', serif;
+    font-size: 100px;
+    font-weight: 700;
+    color: rgba(10,10,15,0.03);
+    line-height: 1;
+    pointer-events: none;
+    transition: color 0.3s ease;
+  }
+
+  .card:hover .card-num-large {
+    color: rgba(10,10,15,0.06);
+  }
+
+  .card.featured .card-num-large {
+    color: rgba(255,255,255,0.04);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-rule"></div>
+  <div class="eyebrow">Investment Research · Deep Dive Series · 2025–2026</div>
+  <h1>Micron Technology —<br><em>The Memory Supercycle</em></h1>
+  <div class="header-meta">
+    <div class="ticker">$MU</div>
+    <div class="badge live">Research Active</div>
+    <div class="badge">19 Documents</div>
+    <div class="badge">FY26 Coverage</div>
+    <div class="badge">HBM · DRAM · NAND</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Section 1: Thesis -->
+  <div class="section-label">01 <span>The Thesis</span></div>
+  <div class="grid grid-2">
+
+    <a class="card featured" href="#" onclick="openModal('micron_pitch_summary.svg','投资概要 — Pitch Summary'); return false;">
+      <div class="card-num-large">00</div>
+      <div class="card-num">00 · SVG · 核心文件</div>
+      <div class="card-title">投资概要<br>Pitch Summary</div>
+      <div class="card-desc">一页纸呈现完整投资逻辑——催化剂、风险、估值与时间线。适合快速向他人介绍整个thesis。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('micron_bull_bear_thesis.svg','多空论点对比 — Bull vs Bear Thesis'); return false;">
+      <div class="card-num-large">01</div>
+      <div class="card-num">01 · SVG</div>
+      <div class="card-title">多空论点对比<br>Bull vs Bear Thesis</div>
+      <div class="card-desc">完整呈现做多和做空两种逻辑框架，帮助独立判断分歧点所在。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('micron_underappreciated_bull_angles.svg','被低估的多头角度'); return false;">
+      <div class="card-num-large">02</div>
+      <div class="card-num">02 · SVG</div>
+      <div class="card-title">被低估的多头角度<br>Underappreciated Bull Angles</div>
+      <div class="card-desc">市场定价未充分反映的几个关键看多逻辑，包括结构性优势与技术切换时机。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('why_market_priced_late.svg','为什么市场定价总是滞后'); return false;">
+      <div class="card-num-large">03</div>
+      <div class="card-num">03 · SVG</div>
+      <div class="card-title">市场为何定价滞后<br>Why Market Priced Late</div>
+      <div class="card-desc">解析半导体周期中市场系统性低估的行为原因，以及alpha来源的结构性逻辑。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+  </div>
+
+  <!-- Section 2: Industry -->
+  <div class="section-label">02 <span>Industry & Cycle</span></div>
+  <div class="grid grid-3">
+
+    <a class="card" href="#" onclick="openModal('memory_cycle_explained.svg','内存周期详解'); return false;">
+      <div class="card-num-large">04</div>
+      <div class="card-num">04 · SVG</div>
+      <div class="card-title">内存周期详解<br>Memory Cycle Explained</div>
+      <div class="card-desc">供需、价格与资本开支的完整周期图，理解Micron当前所处位置的基础框架。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('memory_supercycle_2024_2028.svg','超级周期 2024–2028'); return false;">
+      <div class="card-num-large">05</div>
+      <div class="card-num">05 · SVG</div>
+      <div class="card-title">超级周期预测<br>Supercycle 2024–2028</div>
+      <div class="card-desc">AI驱动下HBM需求爆发，与传统DRAM周期叠加形成历史性的双重上行窗口。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('memory_players_map.svg','行业玩家地图'); return false;">
+      <div class="card-num-large">06</div>
+      <div class="card-num">06 · SVG</div>
+      <div class="card-title">行业玩家地图<br>Memory Players Map</div>
+      <div class="card-desc">三星、SK海力士、美光三巨头的全球市场格局、产品线定位与竞争关系。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('hbm_explainer.svg','HBM 深度解析'); return false;">
+      <div class="card-num-large">07</div>
+      <div class="card-num">07 · SVG</div>
+      <div class="card-title">HBM 深度解析<br>HBM Explainer</div>
+      <div class="card-desc">高带宽内存的技术原理、生产工艺、单价premium与AI芯片集成逻辑全面拆解。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('training_inference_physical_memory.svg','训练 vs 推理的物理内存需求'); return false;">
+      <div class="card-num-large">08</div>
+      <div class="card-num">08 · SVG</div>
+      <div class="card-title">训练 vs 推理<br>物理内存需求对比</div>
+      <div class="card-desc">AI工作负载转型对内存架构的需求变化，量化推理侧内存需求的长期增长。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+  </div>
+
+  <!-- Section 3: Competitive -->
+  <div class="section-label">03 <span>Competitive Landscape</span></div>
+  <div class="grid grid-2">
+
+    <a class="card" href="#" onclick="openModal('micron_vs_skhynix_competitive_map.svg','美光 vs SK海力士竞争图谱'); return false;">
+      <div class="card-num-large">09</div>
+      <div class="card-num">09 · SVG</div>
+      <div class="card-title">美光 vs SK海力士<br>竞争力全面对比</div>
+      <div class="card-desc">HBM技术代际、客户关系、产能时间线与毛利结构的系统性对比分析。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('samsung_threat_analysis.svg','三星威胁分析'); return false;">
+      <div class="card-num-large">10</div>
+      <div class="card-num">10 · SVG</div>
+      <div class="card-title">三星威胁分析<br>Samsung Threat Analysis</div>
+      <div class="card-desc">三星HBM认证进展滞后的原因拆解，以及这一障碍可能持续的时间窗口估算。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('samsung_scenario_impact_quantified.svg','三星情景影响量化'); return false;">
+      <div class="card-num-large">11</div>
+      <div class="card-num">11 · SVG</div>
+      <div class="card-title">三星情景影响量化<br>Samsung Scenario Impact</div>
+      <div class="card-desc">若三星提前/正常/延迟通过HBM认证，对美光市场份额和EPS的量化情景分析。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+  </div>
+
+  <!-- Section 4: Financials -->
+  <div class="section-label">04 <span>Financials & Valuation</span></div>
+  <div class="grid grid-3">
+
+    <a class="card" href="#" onclick="openModal('micron_financials_dashboard.svg','财务仪表板'); return false;">
+      <div class="card-num-large">12</div>
+      <div class="card-num">12 · SVG</div>
+      <div class="card-title">财务仪表板<br>Financials Dashboard</div>
+      <div class="card-desc">收入、毛利率、营业利润和现金流的历史走势与趋势，直观呈现业绩拐点。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('micron_valuation_dashboard.svg','估值仪表板'); return false;">
+      <div class="card-num-large">13</div>
+      <div class="card-num">13 · SVG</div>
+      <div class="card-title">估值仪表板<br>Valuation Dashboard</div>
+      <div class="card-desc">P/E、EV/EBITDA、P/B历史区间与当前水位，以及周期调整后的估值框架。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('micron_q2_revenue_breakdown.svg','FQ2收入拆分'); return false;">
+      <div class="card-num-large">14</div>
+      <div class="card-num">14 · SVG</div>
+      <div class="card-title">FQ2 收入拆分<br>Q2 Revenue Breakdown</div>
+      <div class="card-desc">按业务线（DRAM/NAND/HBM）和终端市场（数据中心/PC/手机）的季度收入分解。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('fy25q2_margin_decomposition.svg','毛利率拆解'); return false;">
+      <div class="card-num-large">15</div>
+      <div class="card-num">15 · SVG</div>
+      <div class="card-title">FQ2 毛利率拆解<br>Margin Decomposition</div>
+      <div class="card-desc">价格、产品组合（mix）、产能利用率和成本降幅对本季毛利率变化的逐项贡献分析。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('micron_quarterly_story_2025_2026.svg','季度故事线'); return false;">
+      <div class="card-num-large">16</div>
+      <div class="card-num">16 · SVG</div>
+      <div class="card-title">季度故事线<br>Quarterly Story 2025–2026</div>
+      <div class="card-desc">从FY25Q1到FY26Q4，每个季度的核心驱动因素、超预期点与管理层指引回顾。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+    <a class="card" href="#" onclick="openModal('bear_case_each_quarter_vs_reality.svg','熊市预测 vs 现实'); return false;">
+      <div class="card-num-large">17</div>
+      <div class="card-num">17 · SVG</div>
+      <div class="card-title">熊市预测 vs 现实<br>Bear Case vs Reality</div>
+      <div class="card-desc">逐季对比市场空头预测与实际业绩，量化"担忧定价折扣"被证伪的规律性。</div>
+      <div class="card-arrow">打开 →</div>
+      <div class="card-tag">SVG</div>
+    </a>
+
+  </div>
+
+  <!-- Section 5: Interactive -->
+  <div class="section-label">05 <span>Interactive Tools</span></div>
+  <div class="grid grid-2">
+
+    <a class="card interactive" style="grid-column: 1 / -1;" href="#" onclick="openModal('micron_income_model_builder.html','FY26 利润表模型 — 交互式'); return false;">
+      <div class="card-num-large" style="color: rgba(180,120,0,0.06);">⚡</div>
+      <div class="card-num" style="color: #a07020;">18 · HTML · 交互工具</div>
+      <div class="card-title" style="color: #7a4a00; font-size: 22px;">FY26 利润表模型构建器<br>Interactive Income Model Builder</div>
+      <div class="card-desc" style="color: #a07020; max-width: 600px;">输入你自己对Q4收入、毛利率、运营费用和税率的假设，实时推导EPS全年预测。内置敏感性分析——看看哪个假设对估值影响最大。</div>
+      <div class="card-arrow" style="color: var(--gold);">打开模型 →</div>
+      <div class="card-tag">HTML · INTERACTIVE</div>
+    </a>
+
+  </div>
+
+</main>
+
+<footer>
+  <div class="footer-note">Micron Technology (NASDAQ: MU) · Investment Research · 19 Files · 2025–2026</div>
+  <div class="footer-note">仅供研究参考，不构成投资建议</div>
+</footer>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">—</div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+  function openModal(file, title) {
+    document.getElementById('modalTitle').textContent = title;
+    const body = document.getElementById('modalBody');
+
+    if (file.endsWith('.html')) {
+      body.innerHTML = `<iframe src="${file}" title="${title}"></iframe>`;
+    } else {
+      body.innerHTML = `<object data="${file}" type="image/svg+xml" style="width:100%;height:100%;"></object>`;
+    }
+
+    document.getElementById('modalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModalDirect() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.getElementById('modalBody').innerHTML = '';
+    document.body.style.overflow = '';
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('modalOverlay')) {
+      closeModalDirect();
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModalDirect();
+  });
+</script>
+
+</body>
+</html>
