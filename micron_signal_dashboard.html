@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; padding: 14px; background: transparent; font-size: 13px; color: var(--text-primary, #1a1a1a); }
+
+  .title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { font-size: 11px; color: #888; margin-bottom: 14px; }
+
+  .section-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 6px; }
+
+  .indicator-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 90px 90px 80px 36px;
+    gap: 8px;
+    align-items: center;
+    padding: 9px 10px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    border: 0.5px solid rgba(0,0,0,0.07);
+    background: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .indicator-row:hover { background: rgba(0,0,0,0.03); }
+
+  .rank { font-size: 11px; font-weight: 700; color: #aaa; text-align: center; }
+  .ind-name { font-size: 12px; font-weight: 500; }
+  .ind-sub { font-size: 10px; color: #999; margin-top: 1px; }
+  .current { font-size: 12px; font-weight: 600; text-align: right; }
+  .threshold { font-size: 10px; color: #888; text-align: right; line-height: 1.4; }
+  .direction { font-size: 10px; color: #888; text-align: right; line-height: 1.4; }
+  .signal { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .green { background: #D4F5E9; }
+  .yellow { background: #FEF3C7; }
+  .red { background: #FEE2E2; }
+  .grey { background: #F3F4F6; }
+
+  .col-header {
+    display: grid;
+    grid-template-columns: 28px 1fr 90px 90px 80px 36px;
+    gap: 8px;
+    padding: 0 10px 4px;
+    font-size: 10px;
+    color: #bbb;
+    font-weight: 500;
+  }
+  .col-header div { text-align: right; }
+  .col-header div:nth-child(2) { text-align: left; }
+
+  .peak-section { margin-top: 16px; }
+  .peak-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    padding-left: 20px;
+  }
+  .peak-timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    background: linear-gradient(to bottom, #E24B4A, #EF9F27, #534AB7, #888);
+    border-radius: 2px;
+  }
+  .peak-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    position: relative;
+  }
+  .peak-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-left: -20px;
+    margin-top: 1px;
+    border: 2px solid white;
+    position: relative;
+    z-index: 1;
+  }
+  .peak-content { flex: 1; }
+  .peak-title { font-size: 12px; font-weight: 600; }
+  .peak-sub { font-size: 11px; color: #888; margin-top: 1px; }
+  .peak-lag { font-size: 10px; padding: 2px 7px; border-radius: 10px; margin-top: 3px; display: inline-block; font-weight: 500; }
+
+  .status-bar {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #F0FDF4;
+    border: 0.5px solid #86EFAC;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .status-label { font-size: 12px; font-weight: 600; color: #085041; }
+  .status-sub { font-size: 11px; color: #3AB48D; margin-top: 1px; }
+  .status-score { font-size: 22px; font-weight: 700; color: #085041; }
+
+  .tab-bar { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tab { padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 0.5px solid rgba(0,0,0,0.1); background: transparent; color: #888; }
+  .tab.active { background: #534AB7; color: white; border-color: #534AB7; }
+</style>
+</head>
+<body>
+
+<div class="title">美光（MU）实时信号监控</div>
+<div class="subtitle">数据截至 2026 年 6 月　　绿色 = 多头信号持续　黄色 = 需要关注　红色 = 止损预警</div>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="showTab('build')">建仓指标</button>
+  <button class="tab" onclick="showTab('peak')">见顶指标</button>
+</div>
+
+<div id="tab-build">
+  <div class="col-header">
+    <div></div>
+    <div>指标</div>
+    <div>当前值</div>
+    <div>预警阈值</div>
+    <div>方向</div>
+    <div></div>
+  </div>
+
+  <div class="indicator-row" onclick="expand(this)">
+    <div class="rank">#1</div>
+    <div>
+      <div class="ind-name">HBM Sold Out 状态</div>
+      <div class="ind-sub">产能是否已全部售罄</div>
+    </div>
+    <div class="current" style="color:#085041;">✓ 售罄<br><span style="font-size:10px;color:#3AB48D;">2026全年锁定</span></div>
+    <div class="threshold">警报：<br>管理层提及<br>未售罄产能</div>
+    <div class="direction" style="color:#085041;">↑ 强多头<br>合同锁定</div>
+    <div class="signal green">✓</div>
+  </div>
+
+  <div class="indicator-row" onclick="expand(this)">
+    <div class="rank">#2</div>
+    <div>
+      <div class="ind-name">Micron 毛利率</div>
+      <div class="ind-sub">CMBU分业务毛利率更重要</div>
+    </div>
+    <div class="current" style="color:#085041;">74.9%<br><span style="font-size:10px;color:#3AB48D;">Q3指引~81%</span></div>
+    <div class="threshold">警报：<br>整体 &lt;60%<br>或连续两季下滑</div>
+    <div class="direction" style="color:#085041;">↑ 持续上升<br>HBM主导</div>
+    <div class="signal green">↑</div>
+  </div>
+
+  <div class="indicator-row" onclick="expand(this)">
+    <div class="rank">#3</div>
+    <div>
+      <div class="ind-name">DRAM ASP 变化</div>
+      <div class="ind-sub">平均售价季比季走势</div>
+    </div>
+    <div class="current" style="color:#085041;">+20%<br><span style="font-size:10px;color:#3AB48D;">QoQ FY26Q2</span></div>
+    <div class="threshold">警报：<br>连续两季<br>ASP 环比负增长</div>
+    <div class="direction" style="color:#085041;">↑ 价格上行<br>定价权强</div>
+    <div class="signal green">↑</div>
+  </div>
+
+  <div class="indicator-row" onclick="expand(this)">
+    <div class="rank">#4</div>
+    <div>
+      <div class="ind-name">Server DDR5 合同价</div>
+      <div class="ind-sub">企业级DRAM现货/合同价格</div>
+    </div>
+    <div class="current" style="color:#085041;">$239<br><span style="font-size:10px;color:#3AB48D;">32GB 模组</span></div>
+    <div class="threshold">警报：<br>价格连续两季<br>环比下滑 &gt;10%</div>
+    <div class="direction" style="color:#085041;">↑ 三星主动<br>涨价 60%</div>
+    <div class="signal green">↑</div>
+  </div>
+
+  <div class="indicator-row" onclick="expand(this)">
+    <div class="rank">#5</div>
+    <div>
+      <div class="ind-name">Nvidia 数据中心收入</div>
+      <div class="ind-sub">AI芯片需求的代理指标</div>
+    </div>
+    <div class="current" style="color:#085041;">$39.1B<br><span style="font-size:10px;color:#3AB48D;">FY26 Q1 +93%</span></div>
+    <div class="threshold">警报：<br>增速跌破<br>30% YoY</div>
+    <div class="direction" style="color:#085041;">↑ 持续加速<br>需求旺盛</div>
+    <div class="signal green">↑</div>
+  </div>
+
+  <div class="indicator-row" onclick="expand(this)">
+    <div class="rank">#6</div>
+    <div>
+      <div class="ind-name">四大云厂商 CapEx</div>
+      <div class="ind-sub">+ 积压订单增速（更重要）</div>
+    </div>
+    <div class="current" style="color:#085041;">$725B<br><span style="font-size:10px;color:#3AB48D;">FY26全年计划</span></div>
+    <div class="threshold">警报：<br>积压订单<br>连续两季下滑</div>
+    <div class="direction" style="color:#085041;">↑ Google积压<br>$462B 翻倍</div>
+    <div class="signal green">↑</div>
+  </div>
+
+  <div class="status-bar">
+    <div>
+      <div class="status-label">当前信号：全面多头</div>
+      <div class="status-sub">6/6 指标处于绿色区间　上次更新：2026 Q2 财报后</div>
+    </div>
+    <div class="status-score">6/6</div>
+  </div>
+</div>
+
+<div id="tab-peak" style="display:none;">
+  <div style="padding:10px 12px;background:#FEF3C7;border-radius:8px;border:0.5px solid #FCD34D;margin-bottom:12px;font-size:11px;color:#854F0B;line-height:1.6;">
+    ⚠ 见顶信号有 <strong>6–9 个月的领先性</strong>——股价通常在信号出现后半年才真正见顶。等财报确认再卖，已经晚了 30–50%。
+  </div>
+
+  <div class="peak-section">
+    <div class="section-label">见顶传导链（从早到晚）</div>
+    <div class="peak-timeline">
+
+      <div class="peak-step">
+        <div class="peak-dot" style="background:#534AB7;"></div>
+        <div class="peak-content">
+          <div class="peak-title" style="color:#3C3489;">最早信号：积压订单增速放缓</div>
+          <div class="peak-sub">谷歌/微软积压合同环比增速连续两季下滑<br>当前：$462B，需持续增长</div>
+          <div class="peak-lag" style="background:#EEF2FF;color:#3C3489;">领先股价 9–12 个月</div>
+        </div>
+      </div>
+
+      <div class="peak-step">
+        <div class="peak-dot" style="background:#E24B4A;"></div>
+        <div class="peak-content">
+          <div class="peak-title" style="color:#A32D2D;">管理层指引开始保守</div>
+          <div class="peak-sub">季度收入指引低于共识预期<br>或毛利率指引首次出现环比下滑</div>
+          <div class="peak-lag" style="background:#FEE2E2;color:#A32D2D;">领先股价 6–9 个月</div>
+        </div>
+      </div>
+
+      <div class="peak-step">
+        <div class="peak-dot" style="background:#EF9F27;"></div>
+        <div class="peak-content">
+          <div class="peak-title" style="color:#854F0B;">HBM Sold Out 状态结束</div>
+          <div class="peak-sub">管理层在财报中提及未售罄产能<br>或 2027 年合同谈判定价低于 2026 年</div>
+          <div class="peak-lag" style="background:#FEF3C7;color:#854F0B;">领先股价 3–6 个月</div>
+        </div>
+      </div>
+
+      <div class="peak-step">
+        <div class="peak-dot" style="background:#1D9E75;"></div>
+        <div class="peak-content">
+          <div class="peak-title" style="color:#085041;">财报确认：毛利率连续下滑</div>
+          <div class="peak-sub">CMBU 毛利率连续两季下滑<br>整体毛利率跌破 60%</div>
+          <div class="peak-lag" style="background:#E1F5EE;color:#085041;">同步或滞后股价 1–2 个季度</div>
+        </div>
+      </div>
+
+      <div class="peak-step">
+        <div class="peak-dot" style="background:#888;"></div>
+        <div class="peak-content">
+          <div class="peak-title" style="color:#555;">太晚了：股价已跌 30–50%</div>
+          <div class="peak-sub">三星开始打价格战 / 分析师集体下调目标价<br>这时候卖已经是情绪驱动，不是分析驱动</div>
+          <div class="peak-lag" style="background:#F3F4F6;color:#888;">滞后信号，无参考价值</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="margin-top:14px;padding:12px 14px;background:var(--color-background-secondary,#f8f8f8);border-radius:8px;border:0.5px solid rgba(0,0,0,0.07);">
+    <div style="font-size:12px;font-weight:600;margin-bottom:8px;">当前见顶信号状态</div>
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+        <span>积压订单增速</span>
+        <span style="background:#D4F5E9;color:#085041;padding:2px 8px;border-radius:10px;font-weight:500;">持续增长 ✓</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+        <span>管理层指引</span>
+        <span style="background:#D4F5E9;color:#085041;padding:2px 8px;border-radius:10px;font-weight:500;">Q3指引超预期 ✓</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+        <span>HBM Sold Out</span>
+        <span style="background:#D4F5E9;color:#085041;padding:2px 8px;border-radius:10px;font-weight:500;">2026全年锁定 ✓</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+        <span>毛利率趋势</span>
+        <span style="background:#D4F5E9;color:#085041;padding:2px 8px;border-radius:10px;font-weight:500;">持续上升 ✓</span>
+      </div>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:#085041;font-weight:500;">结论：目前无任何见顶信号触发</div>
+  </div>
+</div>
+
+<script>
+function showTab(tab) {
+  document.getElementById('tab-build').style.display = tab === 'build' ? 'block' : 'none';
+  document.getElementById('tab-peak').style.display = tab === 'peak' ? 'block' : 'none';
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', (i===0 && tab==='build') || (i===1 && tab==='peak'));
+  });
+}
+function expand(row) {
+  row.style.background = row.style.background ? '' : 'rgba(83,74,183,0.04)';
+}
+</script>
+</body>
+</html>
